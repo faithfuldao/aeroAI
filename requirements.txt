@@ -5,3 +5,4 @@ scipy
 statsmodels
 gymnasium
 stable-baselines3
+gym

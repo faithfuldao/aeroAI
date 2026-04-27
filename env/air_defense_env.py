@@ -1,8 +1,7 @@
-from gym import Env
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces, Env
 import random
 import numpy as np
-import clear_output
 import os
 
 CLOSER=1
@@ -42,6 +41,21 @@ class AirDefenseEnv(Env):
     def _to_idx(self, x, y, z):
         return x + y * self.width + z * self.width * self.height
 
+    def step(self, action):
+        tx, ty, tz = self.threat
+        tax, tay, taz = self.target
+
+        if tx > tax: tx -= 1
+        elif tx < tax: tx += 1
+
+        if ty > tay: ty -= 1
+        elif ty < tay: ty += 1
+
+        tz -= 1 
+
+        self.threat = (tx, ty, tz)
+           
+
     def reset(self):    
         self.state = [NOTHING] * (self.width*self.height*self.length)
         self.target = (random.randrange(self.width), random.randrange(self.height), 0)
@@ -56,3 +70,8 @@ class AirDefenseEnv(Env):
     
     def render(self):
         pretty_print(self.state, self.cumulative_reward)
+
+if __name__ == "__main__":
+    env = AirDefenseEnv(5, 5, 5)
+    obs = env.reset()
+    print(obs)
