@@ -91,13 +91,13 @@ class AirDefenseEnv(Env):
         self.state[self._to_idx(*self.interceptor)] = INTERCEPTOR
 
         self.cumulative_reward += reward
-        observation = np.array(self.state)
+        observation = np.array(self.state, dtype=np.int16)
         truncated = False
         info = {}
         return observation, reward, done, truncated, info
            
 
-    def reset(self):    
+    def reset(self, seed=None, options=None):    
         self.state = [NOTHING] * (self.width*self.height*self.length)
         self.target = (random.randrange(self.width), random.randrange(self.height), 0)
         self.threat = (random.randrange(self.width), random.randrange(self.height), self.length-1)
@@ -107,7 +107,7 @@ class AirDefenseEnv(Env):
         self.state[self._to_idx(*self.threat)] = THREAT  
         self.state[self._to_idx(*self.interceptor)] = INTERCEPTOR
 
-        return np.array(self.state), {}
+        return np.array(self.state, dtype=np.int16), {}
     
     def render(self):
         pretty_print(self.state, self.cumulative_reward)
