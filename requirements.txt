@@ -6,3 +6,4 @@ statsmodels
 gymnasium
 stable-baselines3
 gym
+stable-baselines3
