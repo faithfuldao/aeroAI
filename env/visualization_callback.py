@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
-from air_defense_env import AirDefenseEnv
+from air_defense_env import AirDefenseEnv, ZONE_XY, ZONE_Z
+
 
 class VisualizationCallback(BaseCallback):
     def __init__(self, env, update_freq=100):
@@ -19,34 +19,34 @@ class VisualizationCallback(BaseCallback):
         if self.n_calls % self.update_freq == 0:
             self.ax.cla()
 
-            tx, ty, tz = self.env.threat
-            ix, iy, iz = self.env.interceptor
-            gx, gy, gz = self.env.target
+            mp = self.env.missile.position
+            ip = self.env.interceptor.position
+            tp = self.env.target_pos
+            dist = np.linalg.norm(mp - ip)
 
-            self.ax.scatter(gx, gy, gz, color='blue', s=100, label='target')
-            self.ax.scatter(ix, iy, iz, color='green', s=100, label='interceptor')
-            self.ax.scatter(tx, ty, tz, color='red', s=100, label='threat')
+            self.ax.scatter(*tp, color='blue', s=100, label='Target')
+            self.ax.scatter(*ip, color='green', s=100, label='Interceptor')
+            self.ax.scatter(*mp, color='red', s=100, label='Missile')
 
-            self.ax.set_xlim(0, self.env.width)
-            self.ax.set_ylim(0, self.env.height)
-            self.ax.set_zlim(0, self.env.length)
-
-            self.ax.set_xlabel('X')
-            self.ax.set_ylabel('Y')
-            self.ax.set_zlabel('Z (altitude)')
+            self.ax.set_xlim(0, ZONE_XY)
+            self.ax.set_ylim(0, ZONE_XY)
+            self.ax.set_zlim(0, ZONE_Z)
+            self.ax.set_xlabel('X (m)')
+            self.ax.set_ylabel('Y (m)')
+            self.ax.set_zlabel('Altitude (m)')
             self.ax.legend()
-            self.ax.set_title(f"step {self.n_calls} | reward: {self.env.cumulative_reward}")
+            self.ax.set_title(f"step {self.n_calls} | dist {dist:.0f} m")
 
-            plt.pause(0.5) 
+            plt.pause(0.01)
 
-        return True 
+        return True
 
 
 if __name__ == "__main__":
-    env = AirDefenseEnv(10, 10, 10)
+    from stable_baselines3 import SAC
 
+    env = AirDefenseEnv()
     callback = VisualizationCallback(env, update_freq=100)
-
-    model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=500000, callback=callback)
-    model.save("air_defense_ppo")
+    model = SAC("MlpPolicy", env, verbose=1)
+    model.learn(total_timesteps=500_000, callback=callback)
+    model.save("air_defense_sac")
