@@ -17,13 +17,10 @@ ZONE_Z      = 10000.0   # 10 km altitude ceiling
 
 class AirDefenseEnv(Env):
     def __init__(self):
-        self.dt = 0.5  # seconds per simulation step
+        self.dt = 0.5 
 
-        # Agent commands 3D normalized acceleration [-1, 1] on each axis
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
 
-        # Observation: relative position (3) + interceptor velocity (3) + missile velocity (3)
-        # All normalized to roughly [-1, 1]
         self.observation_space = spaces.Box(low=-2.0, high=2.0, shape=(9,), dtype=np.float32)
 
         self.reset()
