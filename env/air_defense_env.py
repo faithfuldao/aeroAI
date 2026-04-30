@@ -5,9 +5,8 @@ import numpy as np
 import os
 from stable_baselines3 import PPO
 
-CLOSER=1
-INTERCEPTED=5
-TARGET_HIT=-5
+INTERCEPTED=10
+TARGET_HIT=-10
 NOTHING=0
 TARGET=1 
 THREAT=2
@@ -81,8 +80,7 @@ class AirDefenseEnv(Env):
             reward = INTERCEPTED
             done = True
         else:
-            new_distance = self._distance(self.interceptor, self.threat)
-            reward = CLOSER if new_distance < prev_distance else 0
+            reward = 0
             done = False
 
         self.state = [NOTHING] * (self.width * self.height * self.length)
@@ -97,11 +95,13 @@ class AirDefenseEnv(Env):
         return observation, reward, done, truncated, info
            
 
-    def reset(self, seed=None, options=None):    
+    def reset(self, seed=None, options=None):
         self.state = [NOTHING] * (self.width*self.height*self.length)
         self.target = (random.randrange(self.width), random.randrange(self.height), 0)
         self.threat = (random.randrange(self.width), random.randrange(self.height), self.length-1)
-        self.interceptor = (random.randrange(self.width), random.randrange(self.height), 0)
+        ix = max(0, min(self.width - 1, self.target[0] + random.randint(-2, 2)))
+        iy = max(0, min(self.height - 1, self.target[1] + random.randint(-2, 2)))
+        self.interceptor = (ix, iy, 0)
 
         self.state[self._to_idx(*self.target)] = TARGET
         self.state[self._to_idx(*self.threat)] = THREAT  
