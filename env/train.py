@@ -7,24 +7,25 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 N_ENVS = 8
 TIMESTEPS = 1_000_000
 
-env = make_vec_env(lambda: AirDefenseEnv(10, 10, 10), n_envs=N_ENVS, vec_env_cls=SubprocVecEnv)
+if __name__ == '__main__':
+    env = make_vec_env(lambda: AirDefenseEnv(10, 10, 10), n_envs=N_ENVS, vec_env_cls=SubprocVecEnv)
 
-checkpoint_callback = CheckpointCallback(
-    save_freq=50_000,
-    save_path="./checkpoints",
-    name_prefix="air_defense_ppo",
-)
+    checkpoint_callback = CheckpointCallback(
+        save_freq=50_000,
+        save_path="./checkpoints",
+        name_prefix="air_defense_ppo",
+    )
 
-model = PPO(
-    "MlpPolicy",
-    env,
-    verbose=1,
-    n_steps=2048,
-    batch_size=256,
-    tensorboard_log="./tb_logs",
-)
+    model = PPO(
+        "MlpPolicy",
+        env,
+        verbose=1,
+        n_steps=2048,
+        batch_size=256,
+        tensorboard_log="./tb_logs",
+    )
 
-model.learn(total_timesteps=TIMESTEPS, callback=checkpoint_callback)
+    model.learn(total_timesteps=TIMESTEPS, callback=checkpoint_callback)
 
-model.save("./air_defense_ppo")
-print("model saved")
+    model.save("./air_defense_ppo")
+    print("model saved")
