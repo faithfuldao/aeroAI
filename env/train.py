@@ -10,5 +10,5 @@ model = PPO("MlpPolicy", env, verbose=1)
 
 model.learn(total_timesteps=100000)
 
-model.save("air_defense_ppo")
+model.save("./air_defense_ppo")
 print("model saved")
