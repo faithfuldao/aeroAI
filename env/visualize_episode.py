@@ -6,7 +6,7 @@ from air_defense_env import AirDefenseEnv, KILL_RADIUS, ZONE_XY, ZONE_Z
 
 STEP_DELAY    = 0.2
 EPISODE_PAUSE = 1.0
-NUM_EPISODES  = 0   # 0 = run forever
+NUM_EPISODES  = 0  
 
 
 def run_episode(model, env):

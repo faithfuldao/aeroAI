@@ -48,20 +48,22 @@ class AirDefenseEnv(Env):
 
         curr_dist = np.linalg.norm(self.missile.position - self.interceptor.position)
 
-        # Shaping: small reward for closing distance each step
-        reward = (prev_dist - curr_dist) * 0.005
+        to_missile = self.missile.position - self.interceptor.position
+        approach_vel = np.dot(self.interceptor.velocity, to_missile / (prev_dist + 1e-6))
+        reward = approach_vel * 0.002             # reward interceptor actively flying toward missile
+        reward -= 0.5                             # time penalty: encourage urgency
 
         done = False
         truncated = False
 
         if curr_dist < KILL_RADIUS:
-            reward = 100.0
+            reward += 100.0
             done = True
         elif self.missile.position[2] <= 0.0:
-            reward = -100.0
+            reward += -100.0
             done = True
         elif self.steps >= MAX_STEPS:
-            reward = -50.0
+            reward += -50.0
             truncated = True
 
         return self._get_obs(), reward, done, truncated, {}
