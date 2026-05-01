@@ -21,7 +21,7 @@ class AirDefenseEnv(Env):
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
 
-        self.observation_space = spaces.Box(low=-2.0, high=2.0, shape=(9,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-2.0, high=2.0, shape=(12,), dtype=np.float32)
 
         self.reset()
 
@@ -37,6 +37,9 @@ class AirDefenseEnv(Env):
             self.missile.velocity[0] / Missile.SPEED,
             self.missile.velocity[1] / Missile.SPEED,
             self.missile.velocity[2] / Missile.SPEED,
+            self.missile.target_pos[0] / ZONE_XY,   # missile destination x
+            self.missile.target_pos[1] / ZONE_XY,   # missile destination y
+            self.missile.target_pos[2] / ZONE_Z,    # always 0 (ground target)
         ], dtype=np.float32)
 
     def step(self, action):
@@ -48,10 +51,13 @@ class AirDefenseEnv(Env):
 
         curr_dist = np.linalg.norm(self.missile.position - self.interceptor.position)
 
-        to_missile = self.missile.position - self.interceptor.position
-        approach_vel = np.dot(self.interceptor.velocity, to_missile / (prev_dist + 1e-6))
-        reward = approach_vel * 0.002             # reward interceptor actively flying toward missile
-        reward -= 0.5                             # time penalty: encourage urgency
+        reward = (prev_dist - curr_dist) * 0.005  # reward actual gap closing, not just heading
+        reward -= 0.1                              # time penalty
+
+        if curr_dist < 500:
+            reward += 5.0
+        elif curr_dist < 1500:
+            reward += 1.0
 
         done = False
         truncated = False
@@ -60,10 +66,10 @@ class AirDefenseEnv(Env):
             reward += 100.0
             done = True
         elif self.missile.position[2] <= 0.0:
-            reward += -100.0
+            reward -= 100.0
             done = True
         elif self.steps >= MAX_STEPS:
-            reward += -50.0
+            reward -= 50.0
             truncated = True
 
         return self._get_obs(), reward, done, truncated, {}
@@ -91,6 +97,12 @@ class AirDefenseEnv(Env):
             0.0
         ])
         self.interceptor = Interceptor(interceptor_start)
+
+        # start with velocity pointing toward the missile so the agent
+        # doesn't waste the first several steps just accelerating from rest
+        toward_missile = self.missile.position - self.interceptor.position
+        toward_missile /= np.linalg.norm(toward_missile)
+        self.interceptor.velocity = toward_missile * 200.0
 
         return self._get_obs(), {}
 
