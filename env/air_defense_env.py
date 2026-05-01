@@ -9,7 +9,7 @@ from gymnasium import spaces, Env
 from missile import Missile
 from interceptor import Interceptor
 
-KILL_RADIUS = 50.0      # meters — interception if closer than this
+KILL_RADIUS = 150.0      # meters — interception if closer than this
 MAX_STEPS   = 120       # ~60 seconds at dt=0.5s
 ZONE_XY     = 20000.0   # 20 km engagement area
 ZONE_Z      = 10000.0   # 10 km altitude ceiling
@@ -37,9 +37,9 @@ class AirDefenseEnv(Env):
             self.missile.velocity[0] / Missile.SPEED,
             self.missile.velocity[1] / Missile.SPEED,
             self.missile.velocity[2] / Missile.SPEED,
-            self.missile.target_pos[0] / ZONE_XY,   # missile destination x
-            self.missile.target_pos[1] / ZONE_XY,   # missile destination y
-            self.missile.target_pos[2] / ZONE_Z,    # always 0 (ground target)
+            self.missile.target_pos[0] / ZONE_XY,   
+            self.missile.target_pos[1] / ZONE_XY,   
+            self.missile.target_pos[2] / ZONE_Z, 
         ], dtype=np.float32)
 
     def step(self, action):
@@ -50,14 +50,17 @@ class AirDefenseEnv(Env):
         self.steps += 1
 
         curr_dist = np.linalg.norm(self.missile.position - self.interceptor.position)
+        self._min_dist = min(self._min_dist, curr_dist)
 
-        reward = (prev_dist - curr_dist) * 0.005  # reward actual gap closing, not just heading
-        reward -= 0.1                              # time penalty
-
-        if curr_dist < 500:
-            reward += 5.0
-        elif curr_dist < 1500:
-            reward += 1.0
+        # lead the missile by an amount proportional to current distance:
+        # far away → long lead; close in → aim almost directly at it
+        lookahead = min(curr_dist / 1000.0, 3.0)
+        predicted_pos = self.missile.position + self.missile.velocity * lookahead
+        to_predicted = predicted_pos - self.interceptor.position
+        dist_to_predicted = np.linalg.norm(to_predicted) + 1e-6
+        approach_vel = np.dot(self.interceptor.velocity, to_predicted / dist_to_predicted)
+        reward = approach_vel * 0.01
+        reward -= 0.1
 
         done = False
         truncated = False
@@ -66,9 +69,12 @@ class AirDefenseEnv(Env):
             reward += 100.0
             done = True
         elif self.missile.position[2] <= 0.0:
+            # closest-approach bonus so the agent gets signal even on failures
+            reward += max(0.0, 1.0 - self._min_dist / 5000.0) * 30.0
             reward -= 100.0
             done = True
         elif self.steps >= MAX_STEPS:
+            reward += max(0.0, 1.0 - self._min_dist / 5000.0) * 30.0
             reward -= 50.0
             truncated = True
 
@@ -76,6 +82,7 @@ class AirDefenseEnv(Env):
 
     def reset(self, seed=None, options=None):
         self.steps = 0
+        self._min_dist = float('inf')
 
         self.target_pos = np.array([
             random.uniform(2000, ZONE_XY - 2000),

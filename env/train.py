@@ -6,7 +6,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 N_ENVS = 8
-TIMESTEPS = 1_000_000
+TIMESTEPS = 100_000
 CHECKPOINT_DIR = "./checkpoints"
 CHECKPOINT_PREFIX = "air_defense_sac"
 

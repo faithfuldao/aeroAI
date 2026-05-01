@@ -4,8 +4,8 @@ import os
 from stable_baselines3 import SAC
 from air_defense_env import AirDefenseEnv, KILL_RADIUS, ZONE_XY, ZONE_Z
 
-STEP_DELAY    = 0.2
-EPISODE_PAUSE = 1.0
+STEP_DELAY    = 0.01
+EPISODE_PAUSE = 0.01
 NUM_EPISODES  = 0  
 
 
